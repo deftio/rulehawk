@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "rulehawk"
 version = "0.1.0"
 description = "Lightweight rule enforcement for codebases - perfect for humans and AI agents"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "RuleHawk Team"},
@@ -40,7 +40,7 @@ dev = [
     "ruff>=0.1",
 ]
 mcp = [
-    "mcp>=0.1",
+    # "mcp>=0.1",  # Commented out as MCP is not yet publicly available
 ]
 
 [project.scripts]
@@ -52,15 +52,17 @@ Documentation = "https://github.com/yourusername/rulehawk/docs"
 Repository = "https://github.com/yourusername/rulehawk"
 Issues = "https://github.com/yourusername/rulehawk/issues"
 
-[tool.setuptools]
+[tool.hatch.build]
 packages = ["rulehawk"]
 
-[tool.setuptools.package-data]
-rulehawk = ["*.yaml", "*.json"]
+[tool.hatch.build.targets.wheel]
+packages = ["rulehawk"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py38"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "F",  # pyflakes

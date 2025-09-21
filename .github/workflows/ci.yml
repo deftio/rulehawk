@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        cache-dependency-glob: "**requirements*.txt"
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        uv venv
+        uv pip install -e .
+        uv pip install ruff pytest pytest-cov black
+
+    - name: Run RuleHawk preflight checks
+      run: |
+        uv run rulehawk preflight || true
+
+    - name: Lint with ruff
+      run: |
+        uv run ruff check rulehawk/
+        uv run ruff format --check rulehawk/
+
+    - name: Run tests
+      run: |
+        uv run pytest rulehawk/tests/ -v
+
+    - name: Run RuleHawk postflight checks
+      run: |
+        uv run rulehawk postflight || true
+
+    - name: Run RuleHawk security checks
+      run: |
+        uv run rulehawk security || true
+
+  rulehawk-self-check:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install RuleHawk
+      run: |
+        uv venv
+        uv pip install -e .
+        uv pip install ruff pytest pytest-cov
+
+    - name: Run comprehensive RuleHawk check
+      run: |
+        echo "## RuleHawk Self-Check Results" >> $GITHUB_STEP_SUMMARY
+        echo '```yaml' >> $GITHUB_STEP_SUMMARY
+        uv run rulehawk check --phase all >> $GITHUB_STEP_SUMMARY 2>&1 || true
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: Check specific compliance
+      run: |
+        # These should pass in CI
+        uv run rulehawk check A1  # Code formatting
+        uv run rulehawk check C1  # Zero warnings

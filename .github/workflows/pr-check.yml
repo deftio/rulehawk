@@ -1,0 +1,42 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        uv venv
+        uv pip install -e .
+        uv pip install ruff black
+
+    - name: Format check
+      run: |
+        uv run ruff format --check rulehawk/
+
+    - name: Lint check
+      run: |
+        uv run ruff check rulehawk/
+
+    - name: Run RuleHawk preflight
+      run: |
+        echo "## RuleHawk Preflight Check" >> $GITHUB_STEP_SUMMARY
+        echo '```yaml' >> $GITHUB_STEP_SUMMARY
+        uv run rulehawk preflight >> $GITHUB_STEP_SUMMARY 2>&1
+        echo '```' >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true

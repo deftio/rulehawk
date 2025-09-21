@@ -13,6 +13,7 @@ from datetime import datetime
 from . import get_logo
 from .rules.registry import RuleRegistry
 from .rules.runner import RuleRunner
+from .rules.enhanced_runner import EnhancedRuleRunner
 from .config.loader import ConfigLoader
 
 
@@ -45,11 +46,14 @@ def cli(ctx, output_json, quiet, verbose):
 @click.option('--fix', is_flag=True, help='Attempt to auto-fix issues')
 @click.option('--output', type=click.Choice(['yaml', 'json', 'markdown']),
               default='yaml', help='Output format (default: yaml)')
+@click.option('--verbosity', type=click.Choice(['minimal', 'normal', 'verbose']),
+              default='normal', help='Verbosity level for output')
+@click.option('--show-skipped', is_flag=True, help='Show skipped rules in output')
 @click.option('--ai', type=click.Choice(['claude', 'openai', 'cursor', 'none']),
               default='none', help='AI provider for complex checks')
 @click.argument('rules', nargs=-1)
 @click.pass_context
-def check(ctx, phase, fix, output, ai, rules):
+def check(ctx, phase, fix, output, verbosity, show_skipped, ai, rules):
     """
     Check codebase against rules
 
@@ -64,7 +68,7 @@ def check(ctx, phase, fix, output, ai, rules):
     verbose = ctx.obj.get('verbose', False)
 
     if not quiet and output == 'markdown':
-        click.echo(f"🦅 RuleHawk checking {phase} rules...")
+        click.echo(f"🦅 rulehawk checking {phase} rules...")
 
     # Load configuration
     config = ConfigLoader.load()
@@ -73,9 +77,9 @@ def check(ctx, phase, fix, output, ai, rules):
     registry = RuleRegistry()
     rules_to_check = registry.get_rules(phase=phase, specific_rules=list(rules))
 
-    # Run checks
-    runner = RuleRunner(config=config, ai_provider=ai)
-    results = runner.check_rules(rules_to_check, auto_fix=fix)
+    # Use enhanced runner for better error reporting
+    enhanced_runner = EnhancedRuleRunner(config=config, verbosity=verbosity)
+    results = enhanced_runner.check_rules(rules_to_check, auto_fix=fix)
 
     # Output results in requested format
     if output == 'json':
@@ -88,29 +92,45 @@ def check(ctx, phase, fix, output, ai, rules):
                 'total': results['total_count'],
                 'passed': results['passed_count'],
                 'failed': results['failed_count'],
+                'skipped': results.get('skipped_count', 0),
+                'warnings': results.get('warning_count', 0),
             },
             'violations': [],
+            'skipped': [] if show_skipped else None,
             'fixed': [] if fix else None
         }
 
         for detail in results['details']:
             if detail['status'] == 'failed':
-                yaml_output['violations'].append({
-                    'rule': detail['rule_id'],
+                violation = {
+                    'rule': detail.get('rule', detail.get('rule_id', '')),
                     'name': detail.get('name', ''),
-                    'severity': 'error',  # Get from rule
-                    'message': detail['message'],
-                    'fixable': False  # Get from rule
+                    'severity': detail.get('severity', 'error'),
+                    'message': detail.get('message', ''),
+                }
+                # Add details if in verbose mode
+                if verbosity == 'verbose' and detail.get('details'):
+                    violation['details'] = detail['details']
+                if detail.get('fixable') or detail.get('fix_available'):
+                    violation['fixable'] = True
+                    if verbosity == 'verbose' and detail.get('fix_command'):
+                        violation['fix_command'] = detail['fix_command']
+                yaml_output['violations'].append(violation)
+            elif detail['status'] == 'skipped' and show_skipped:
+                yaml_output['skipped'].append({
+                    'rule': detail.get('rule', detail.get('rule_id', '')),
+                    'name': detail.get('name', ''),
+                    'reason': detail.get('skip_reason', detail.get('message', ''))
                 })
             elif fix and detail['status'] == 'fixed':
                 yaml_output['fixed'].append({
-                    'rule': detail['rule_id'],
+                    'rule': detail.get('rule', detail.get('rule_id', '')),
                     'name': detail.get('name', ''),
-                    'message': detail['message']
+                    'message': detail.get('message', '')
                 })
 
-        # Remove None values
-        yaml_output = {k: v for k, v in yaml_output.items() if v is not None}
+        # Remove None values and empty lists
+        yaml_output = {k: v for k, v in yaml_output.items() if v is not None and (v != [] or k == 'violations')}
         click.echo(yaml.dump(yaml_output, default_flow_style=False))
     else:  # markdown
         _print_results(results, quiet, verbose)
@@ -161,7 +181,7 @@ def mcp(port, host):
         import asyncio
         from rulehawk.mcp.server import RuleHawkMCPServer
 
-        click.echo(f"Starting RuleHawk MCP server on {host}:{port}")
+        click.echo(f"Starting rulehawk MCP server on {host}:{port}")
         click.echo("AI assistants can now interact with RuleHawk")
         click.echo("Press Ctrl+C to stop")
 
@@ -269,7 +289,7 @@ rules:
 
     config_path.write_text(default_config)
     click.echo("✅ Created .rulehawk.yaml")
-    click.echo("🦅 RuleHawk is ready to keep watch over your code!")
+    click.echo("🦅 rulehawk is ready to keep watch over your code!")
 
 
 @cli.command()
@@ -341,7 +361,7 @@ def _print_results(results, quiet, verbose):
     warnings = results.get('warning_count', 0)
 
     # Header with context
-    click.echo("\n# RuleHawk Check Results\n")
+    click.echo("\n# rulehawk check results\n")
     click.echo("The following summary shows the compliance status of your codebase against configured rules:\n")
 
     # Summary section with explanation

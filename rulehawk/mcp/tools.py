@@ -388,8 +388,7 @@ async def suggest_configuration(project_root: Path) -> Dict[str, Any]:
             'pattern': '**/*',
             'forbidden': [
                 'api_key.*=.*[\'"][A-Za-z0-9]{20,}[\'"]',
-                'password.*=.*[\'"][^\'"
-]{8,}[\'"]'
+                'password.*=.*[\'"][^\'\"\\n]{8,}[\'"]'
             ]
         }
     ]

@@ -1,6 +1,34 @@
-# Codebase Rules for Agents and Humans
+# RuleHawk: Quality Rules for Coding Agents and Humans
 
-This repository provides enforceable quality standards for software development that work with both human developers and AI coding agents. It consists of comprehensive rule definitions and RuleHawk, a lightweight CLI tool that enforces these rules automatically.
+Development work involves two distinct types of guidance: **tasks** (what to implement) and **rules** (quality standards that must be maintained). While tasks change with each project, rules remain consistent - ensuring code is properly formatted, tested, documented, and follows team conventions.
+
+Programmatically enforceable development standards designed to work seamlessly with both AI coding agents and human developers.
+
+## Understanding the Challenge
+
+Modern coding agents excel at solving complex programming problems but often struggle with development hygiene. They might scatter debug files throughout your codebase, skip writing tests, ignore linting warnings, or commit directly to protected branches. While these agents are powerful problem-solvers, they benefit from clear guidance on development best practices.
+
+Traditional coding standards documents present challenges for consistent agent enforcement. They're often written in prose that's difficult for agents to parse reliably, leading to inconsistent application of important development practices.
+
+## What RuleHawk Provides
+
+RuleHawk addresses these challenges through a flexible approach that works with or without additional tooling. The system consists of two complementary components:
+
+- **Comprehensive Rule Definitions** - YAML-formatted development standards that can be used independently by teams and agents
+- **Optional CLI Tool** - Automated enforcement utility that helps agents check compliance and provides actionable feedback
+
+You can adopt the rule definitions on their own and implement your own enforcement, or use the included CLI tool to automate rule checking for coding agents.
+
+## Key Capabilities
+
+RuleHawk's rule definitions provide structure and consistency regardless of how you choose to enforce them:
+
+- **Phase-Based Organization**: Rules are structured around natural development workflows (pre-flight, in-flight, post-flight)
+- **Machine-Readable Format**: YAML structure that agents and tools can easily parse and interpret
+- **Project Customization**: Override rules and thresholds to match your specific project requirements
+- **Standalone Usage**: Rules can be adopted independently without requiring the CLI tool
+- **Optional Automation**: CLI tool available for teams that want automated enforcement and logging
+
 
 ## Why Codebase Rules Matter
 
@@ -93,21 +121,35 @@ RuleHawk solves this by providing:
 
 ### Quick Start with RuleHawk
 
-Install and start using RuleHawk:
+Install and start using RuleHawk with `uv` (modern, fast Python package manager):
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install RuleHawk
+git clone <repo-url> rulehawk
+cd rulehawk
+uv venv
+uv pip install -e .
+
+# Use RuleHawk in your project
+cd your-project
+uv run rulehawk init     # Creates rulehawk.yaml
+
+# Run checks
+uv run rulehawk check           # Check all rules
+uv run rulehawk check --fix     # Auto-fix what's possible
+```
+
+Or with traditional pip:
 
 ```bash
 # Install from source
-cd rulehawk
 pip install -e .
-
-# Initialize in your project
-cd your-project
-rulehawk init  # Creates rulehawk.yaml
 
 # Run checks
 rulehawk check           # Check all rules
-rulehawk check --fix     # Auto-fix what's possible
-rulehawk check --enforce # Exit 1 if any fail
 ```
 
 ### For AI Agents
