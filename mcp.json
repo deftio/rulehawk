@@ -1,0 +1,60 @@
+{
+  "name": "rulehawk-mcp",
+  "description": "RuleHawk MCP server for AI assistant interaction",
+  "version": "1.0.0",
+  "command": "python -m rulehawk.mcp.server",
+  "transport": "stdio",
+  "tools": [
+    {
+      "name": "detect_project",
+      "description": "Detect project type and configuration",
+      "parameters": []
+    },
+    {
+      "name": "test_command",
+      "description": "Test if a command works in the project",
+      "parameters": [
+        {
+          "name": "command",
+          "type": "string",
+          "description": "Command to test",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "find_test_runner",
+      "description": "Find the test runner for this project",
+      "parameters": []
+    },
+    {
+      "name": "check_tool_installed",
+      "description": "Check if a tool is installed",
+      "parameters": [
+        {
+          "name": "tool_name",
+          "type": "string",
+          "description": "Name of the tool to check",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "suggest_configuration",
+      "description": "Suggest RuleHawk configuration for this project",
+      "parameters": []
+    },
+    {
+      "name": "validate_rules",
+      "description": "Validate RuleHawk rules YAML",
+      "parameters": [
+        {
+          "name": "yaml_content",
+          "type": "string",
+          "description": "YAML content to validate",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RuleBird - Lightweight rule enforcement for codebases
+RuleHawk - Lightweight rule enforcement for codebases
 """
 
 from setuptools import setup, find_packages
@@ -11,13 +11,13 @@ readme_path = Path(__file__).parent / 'README.md'
 long_description = readme_path.read_text() if readme_path.exists() else ''
 
 setup(
-    name='rulebird',
+    name='rulehawk',
     version='0.1.0',
     description='Lightweight rule enforcement CLI for codebases - perfect for humans and AI agents',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    author='RuleBird Contributors',
-    url='https://github.com/deftio/rulebird',
+    author='RuleHawk Contributors',
+    url='https://github.com/deftio/rulehawk',
     packages=find_packages(),
     include_package_data=True,
     python_requires='>=3.8',
@@ -41,7 +41,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'rulebird=rulebird.cli:cli',
+            'rulehawk=rulehawk.cli:cli',
+            'rh=rulehawk.cli:cli',  # Short alias
         ],
     },
     classifiers=[
@@ -58,7 +59,7 @@ setup(
     ],
     keywords='code quality, linting, ci, automation, ai agents, development tools',
     project_urls={
-        'Bug Reports': 'https://github.com/deftio/rulebird/issues',
-        'Source': 'https://github.com/deftio/rulebird',
+        'Bug Reports': 'https://github.com/deftio/rulehawk/issues',
+        'Source': 'https://github.com/deftio/rulehawk',
     },
 )

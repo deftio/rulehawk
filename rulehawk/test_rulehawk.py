@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick test script for RuleBird
+Quick test script for RuleHawk
 """
 
 from rules.registry import RuleRegistry
@@ -25,7 +25,7 @@ def test_basic():
     if rule:
         print(f"✅ Rule S1: {rule['name']}")
 
-    print("\n🦉 RuleBird basic tests passed!")
+    print("\n🦅 RuleHawk basic tests passed!")
 
 if __name__ == '__main__':
     test_basic()

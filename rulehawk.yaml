@@ -1,0 +1,450 @@
+# RuleHawk Configuration and Rules
+# This file defines all rules and configuration for RuleHawk
+# It's designed to be readable by both humans and agents
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+config:
+  # AI provider for complex rule checking (none|claude|openai|cursor|local)
+  ai_provider: none
+
+  # Which rule phases to run by default
+  enabled_phases:
+    - preflight
+    - postflight
+    - security
+
+  # Paths to ignore when checking
+  ignore_paths:
+    - node_modules/
+    - .venv/
+    - venv/
+    - vendor/
+    - dist/
+    - build/
+    - __pycache__/
+    - .git/
+
+  # Logging configuration
+  logging:
+    dir: .rulehawk       # Where to store audit logs
+    format: jsonl        # Log format (jsonl|markdown)
+
+# ============================================================================
+# RULES
+# ============================================================================
+
+rules:
+  # --------------------------------------------------------------------------
+  # ALWAYS-ACTIVE RULES (Continuous Enforcement)
+  # Standards that apply continuously during development
+  # --------------------------------------------------------------------------
+
+  A1:
+    name: Code Formatting
+    phase: always
+    severity: warning
+    description: |
+      Enforce consistent code style automatically across all files.
+      Eliminates style debates, improves readability, reduces diff noise.
+    check:
+      python: "ruff format --check"
+      javascript: "biome check"
+      typescript: "prettier --check ."
+      go: "gofmt -l ."
+    fix:
+      python: "ruff format"
+      javascript: "biome check --write"
+      typescript: "prettier --write ."
+      go: "gofmt -w ."
+    auto_fixable: true
+
+  A2:
+    name: Organize Experimental Files
+    phase: always
+    severity: warning
+    description: |
+      Use designated directories for debug files, experiments, and temporary artifacts.
+      Keeps main codebase clean, makes it obvious what's experimental vs production.
+
+      Allowed directories:
+      - scratch/ : Quick experiments and throwaway code
+      - debug/   : Debug scripts and diagnostic tools
+      - test-*/  : Named test directories
+      - temp/    : Temporary files and outputs
+    check:
+      ai: "Check if any debug, test, or experimental files exist outside of scratch/, debug/, temp/, or test-*/ directories"
+    auto_fixable: false
+
+  A3:
+    name: Branch Protection
+    phase: always
+    severity: error
+    description: |
+      Never commit directly to protected branches.
+      Always use feature branches for changes.
+
+      Protected branches: main, master, develop, staging, production, release/*
+    check:
+      command: "git symbolic-ref --short HEAD"
+      validator: check_branch_protection
+    auto_fixable: false
+
+  # --------------------------------------------------------------------------
+  # SECURITY RULES (Continuous Enforcement)
+  # Critical security practices to protect sensitive data
+  # --------------------------------------------------------------------------
+
+  S1:
+    name: No Hardcoded Secrets
+    phase: security
+    severity: error
+    description: |
+      Never commit credentials, API keys, tokens, or sensitive data directly in code.
+
+      Forbidden patterns:
+      - API keys: api_key = "sk-..."
+      - Passwords: password = "admin123"
+      - Tokens: token = "ghp_..."
+      - Private keys: -----BEGIN RSA PRIVATE KEY-----
+    check:
+      command: "gitleaks detect --no-git --verbose"
+      ai_fallback: "Check for hardcoded secrets, API keys, passwords, tokens, or private keys"
+    auto_fixable: false
+
+  S2:
+    name: Secure Credential Storage
+    phase: security
+    severity: error
+    description: |
+      Store credentials using approved secure methods only.
+
+      Development: .env files (must be in .gitignore)
+      Production: Cloud secret managers (AWS Secrets Manager, Azure Key Vault, etc.)
+    check:
+      ai: "Check if credentials are stored securely using environment variables or secret managers"
+    auto_fixable: false
+
+  S3:
+    name: Auth Best Practices
+    phase: security
+    severity: error
+    description: |
+      Use industry-standard authentication patterns.
+
+      Requirements:
+      - Never store plaintext passwords
+      - Use bcrypt, scrypt, or Argon2 for hashing
+      - Implement proper session management
+      - Follow OAuth2/OIDC standards
+    check:
+      ai: "Check for proper password hashing (bcrypt/scrypt/argon2), secure sessions, no custom crypto"
+    auto_fixable: false
+
+  S4:
+    name: Input Validation
+    phase: security
+    severity: error
+    description: |
+      Validate and sanitize all external input.
+      Prevents SQL injection, XSS, command injection attacks.
+
+      Requirements:
+      - Use parameterized queries for SQL
+      - Escape HTML/JavaScript output
+      - Avoid shell=True in subprocess calls
+      - Validate file paths against directory traversal
+    check:
+      ai: "Check for SQL injection, XSS, command injection vulnerabilities"
+    auto_fixable: false
+
+  S5:
+    name: Dependency Security
+    phase: security
+    severity: warning
+    description: |
+      Keep dependencies updated and scan for vulnerabilities.
+      Outdated dependencies often contain known security issues.
+    check:
+      python: "pip-audit"
+      javascript: "npm audit"
+      typescript: "npm audit"
+    fix:
+      javascript: "npm audit fix"
+      typescript: "npm audit fix"
+    auto_fixable: true
+
+  S6:
+    name: Secure Communication
+    phase: security
+    severity: error
+    description: |
+      Use TLS/HTTPS for all network communication with sensitive data.
+      Always validate SSL certificates.
+      Use TLS 1.2 or higher.
+    check:
+      ai: "Check for HTTPS usage, certificate validation, no verify=False"
+    auto_fixable: false
+
+  S7:
+    name: Logging Security
+    phase: security
+    severity: error
+    description: |
+      Log security events without exposing sensitive data.
+
+      Forbidden in logs:
+      - Passwords (even hashed)
+      - API keys and tokens
+      - Credit card numbers
+      - Social security numbers
+      - Personal health information
+    check:
+      ai: "Check logs don't contain passwords, API keys, credit cards, SSNs, PHI"
+    auto_fixable: false
+
+  S8:
+    name: Security Testing
+    phase: security
+    severity: warning
+    description: |
+      Include security testing as part of development.
+      Run static analysis (SAST) on every commit.
+      Run dependency scanning daily.
+    check:
+      python: "bandit -r ."
+      javascript: "eslint --plugin security ."
+    auto_fixable: false
+
+  # --------------------------------------------------------------------------
+  # PREFLIGHT RULES (Before Development Session)
+  # Validation before starting any significant work
+  # --------------------------------------------------------------------------
+
+  P1:
+    name: Environment Validation
+    phase: preflight
+    severity: error
+    description: |
+      Verify development environment is ready before starting work.
+
+      Checks:
+      - Working directory is clean
+      - On correct feature branch
+      - Dependencies up to date
+      - Local tests pass
+    check:
+      validator: check_environment
+    auto_fixable: false
+
+  P2:
+    name: Task Planning
+    phase: preflight
+    severity: info
+    description: |
+      (Optional) Create written plan with clear steps.
+      Helps with complex features but not required for all work.
+
+      If using: Create TASK-PLAN.md with objective, steps, and status.
+    check:
+      validator: check_task_plan
+    auto_fixable: false
+
+  # --------------------------------------------------------------------------
+  # IN-FLIGHT RULES (During Development)
+  # Quality standards during active development
+  # --------------------------------------------------------------------------
+
+  F1:
+    name: Document Public APIs
+    phase: inflight
+    severity: warning
+    description: |
+      Add comprehensive documentation for any public-facing code.
+      Include purpose, parameters, return values, and examples.
+
+      Python: Google-style docstrings
+      JS/TS: JSDoc with @param, @returns, @example
+    check:
+      ai: "Check if all public functions and classes have proper documentation"
+    auto_fixable: false
+
+  F2:
+    name: Update Task Plan
+    phase: inflight
+    severity: info
+    description: |
+      (Optional) Keep implementation plan current if using TASK-PLAN.md.
+      Update status after completing steps.
+    check:
+      validator: check_task_plan_updated
+    auto_fixable: false
+
+  F3:
+    name: Test as You Go
+    phase: inflight
+    severity: warning
+    description: |
+      Write tests immediately after implementing functionality.
+      Catches bugs early when context is fresh.
+    check:
+      ai: "Check if new functions have corresponding test files and coverage"
+    auto_fixable: false
+
+  # --------------------------------------------------------------------------
+  # POST-FLIGHT RULES (Before Considering Work Complete)
+  # Final validation gates before marking work done
+  # --------------------------------------------------------------------------
+
+  C1:
+    name: Zero Warnings
+    phase: postflight
+    severity: error
+    description: |
+      Eliminate all compiler and linter warnings.
+      Warnings often indicate real bugs.
+      Fix or explicitly suppress with justification.
+    check:
+      python: "ruff check --exit-non-zero-on-fix"
+      javascript: "eslint . --max-warnings=0"
+      typescript: "eslint . --max-warnings=0"
+    fix:
+      python: "ruff check --fix"
+      javascript: "eslint . --fix"
+      typescript: "eslint . --fix"
+    auto_fixable: true
+
+  C2:
+    name: Test Coverage
+    phase: postflight
+    severity: warning
+    description: |
+      Ensure comprehensive test coverage for all new/changed code.
+
+      Requirements:
+      - New/changed code: 100% coverage (with documented exceptions)
+      - Overall project: ≥80% coverage maintained
+      - Tests must be deterministic and complete in <10 minutes
+    check:
+      python: "pytest --cov --cov-fail-under=80"
+      javascript: "jest --coverage --coverageThreshold='{\"global\":{\"lines\":80}}'"
+    auto_fixable: false
+
+  C3:
+    name: CI Must Be Green
+    phase: postflight
+    severity: error
+    description: |
+      All automated checks and tests must pass in CI environment.
+      Ensures changes work in clean environment.
+    check:
+      validator: check_ci_status
+    auto_fixable: false
+
+  C4:
+    name: Documentation Complete
+    phase: postflight
+    severity: warning
+    description: |
+      Verify all documentation requirements are satisfied.
+      Update README if adding new features.
+      Update API docs if changing interfaces.
+    check:
+      ai: "Check if documentation is complete: API docs, README updates if needed"
+    auto_fixable: false
+
+  C5:
+    name: Security Review
+    phase: postflight
+    severity: error
+    description: |
+      Verify all security rules (S1-S8) pass for sensitive changes.
+
+      Required for:
+      - Authentication/authorization changes
+      - External API integrations
+      - Data encryption/handling
+      - Database schema changes
+    check:
+      validator: run_security_phase
+    auto_fixable: false
+
+# ============================================================================
+# CUSTOM RULES
+# Add your project-specific rules here
+# ============================================================================
+
+custom_rules:
+  DOC-01:
+    name: Documentation Quality
+    phase: postflight
+    severity: warning
+    description: |
+      Ensure documentation follows quality standards for readability.
+
+      Requirements:
+      - All headings must be followed by explanatory text
+      - All lists must be preceded by context-setting text
+      - List items should start with a bold topic/keyword
+      - Avoid excessive horizontal rules (---) unless serving a clear purpose
+
+      This ensures documentation is scannable and understandable.
+    check:
+      ai: |
+        Check markdown documentation for:
+        1. Naked headings (headings with no text before next heading or list)
+        2. Naked lists (lists with no introductory text)
+        3. List items without bold keywords/topics at the start
+        4. Excessive use of --- dividers
+        Return specific file and line numbers for violations.
+    auto_fixable: false
+
+  DOC-02:
+    name: Table Documentation
+    phase: postflight
+    severity: warning
+    description: |
+      Ensure tables are properly introduced with context.
+
+      Requirements:
+      - All tables must be preceded by explanatory text
+      - The introductory text should explain what the table contains
+      - Tables should not appear immediately after headings without explanation
+
+      This helps readers understand what data they're about to see and why it matters.
+    check:
+      ai: |
+        Check markdown files for:
+        1. Tables that appear without introductory text
+        2. Tables immediately following headings with no explanation
+        3. Multiple tables in sequence without explanatory text between them
+        Return specific file and line numbers for violations.
+    auto_fixable: false
+
+  # Example custom rule (uncomment to use):
+  # CUSTOM-02:
+  #   name: No TODO Comments
+  #   phase: postflight
+  #   severity: warning
+  #   description: Ensure no TODO comments in production code
+  #   check:
+  #     command: "! grep -r 'TODO' --include='*.py' --include='*.js' ."
+  #   auto_fixable: false
+
+# ============================================================================
+# AGENT RECOVERY
+# Helps agents resume work after crashes
+# ============================================================================
+
+agent_recovery:
+  enabled: true
+  state_file: .rulehawk/agent-state.json
+  instructions: |
+    If agent crashes during development:
+    1. Check .rulehawk/agent-state.json for last known state
+    2. Review git status and recent commits
+    3. Check TASK-PLAN.md if it exists
+    4. Run 'rulehawk check' to see current violations
+    5. Continue from last uncompleted task

@@ -1,15 +1,16 @@
 """
-Configuration Loader for RuleBird
+Configuration Loader for RuleHawk
 """
 
 import yaml
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional
+from .yaml_loader import YamlRuleLoader
 
 
 class ConfigLoader:
-    """Load and manage RuleBird configuration"""
+    """Load and manage RuleHawk configuration"""
 
     DEFAULT_CONFIG = {
         'ai_provider': 'none',
@@ -46,7 +47,7 @@ class ConfigLoader:
             },
         },
         'logging': {
-            'dir': '.rulebird',
+            'dir': '.rulehawk',
             'format': 'jsonl',
         },
         'rules': {}
@@ -61,10 +62,11 @@ class ConfigLoader:
         if config_path is None:
             # Search for config in order of preference
             possible_paths = [
-                Path('.rulebird.yaml'),
-                Path('.rulebird.yml'),
-                Path('.rulebird.json'),
-                Path('rulebird.config.json'),
+                Path('rulehawk.yaml'),  # Primary config file
+                Path('.rulehawk.yaml'),
+                Path('.rulehawk.yml'),
+                Path('.rulehawk.json'),
+                Path('rulehawk.config.json'),
             ]
             for path in possible_paths:
                 if path.exists():
@@ -72,9 +74,24 @@ class ConfigLoader:
                     break
 
         if config_path and config_path.exists():
-            user_config = cls._load_file(config_path)
-            if user_config:
-                config = cls._merge_configs(config, user_config)
+            # If it's a YAML file with rules, use YamlRuleLoader
+            if config_path.suffix in ['.yaml', '.yml'] and config_path.name.startswith('rulehawk'):
+                try:
+                    yaml_loader = YamlRuleLoader(str(config_path))
+                    loaded_config = yaml_loader.load()
+                    config = cls._merge_configs(config, loaded_config)
+                    # Store the loader for rule access
+                    config['_yaml_loader'] = yaml_loader
+                except Exception as e:
+                    print(f"Warning: Could not load rules from {config_path}: {e}")
+                    # Fall back to simple loading
+                    user_config = cls._load_file(config_path)
+                    if user_config:
+                        config = cls._merge_configs(config, user_config)
+            else:
+                user_config = cls._load_file(config_path)
+                if user_config:
+                    config = cls._merge_configs(config, user_config)
 
         # Also check for environment variables
         config = cls._load_env_overrides(config)
@@ -114,9 +131,9 @@ class ConfigLoader:
 
         # Map of env vars to config paths
         env_mappings = {
-            'RULEBIRD_AI_PROVIDER': 'ai_provider',
-            'RULEBIRD_LOG_DIR': ('logging', 'dir'),
-            'RULEBIRD_LOG_FORMAT': ('logging', 'format'),
+            'RULEHAWK_AI_PROVIDER': 'ai_provider',
+            'RULEHAWK_LOG_DIR': ('logging', 'dir'),
+            'RULEHAWK_LOG_FORMAT': ('logging', 'format'),
         }
 
         for env_var, config_path in env_mappings.items():

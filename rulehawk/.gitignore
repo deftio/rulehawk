@@ -33,11 +33,11 @@ env/
 *.swo
 .DS_Store
 
-# RuleBird specific
-.rulebird/
+# RuleHawk specific
+.rulehawk/
 *.jsonl
-.rulebird.yaml
-rulebird.config.json
+.rulehawk.yaml
+rulehawk.config.json
 
 # Testing
 .coverage

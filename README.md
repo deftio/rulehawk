@@ -1,87 +1,210 @@
-# RuleBird 🦉 - Codebase Rules for Agents and Humans
+# Codebase Rules for Agents and Humans
 
-A lightweight CLI tool and rule framework to maintain code quality standards when working with both human developers and AI coding agents.
+This repository provides enforceable quality standards for software development that work with both human developers and AI coding agents. It consists of comprehensive rule definitions and RuleHawk, a lightweight CLI tool that enforces these rules automatically.
 
-## What's in This Repo
+## Why Codebase Rules Matter
 
-1. **[`codebase-rules.md`](./codebase-rules.md)** - Comprehensive rule definitions for code quality
-2. **[`rulebird/`](./rulebird/)** - RuleBird CLI tool that enforces these rules automatically
+Modern software development faces a critical problem: quality standards exist in documentation but aren't enforced. This gap between "what we say" and "what we check" leads to preventable production issues.
 
-## Quick Start with RuleBird
+The problem is especially acute with AI coding agents:
+
+- **Context window limitations** cause agents to forget rules mentioned earlier
+- **False confidence** leads to claims like "all tests pass" when they don't
+- **No external validation** means agents self-report compliance without verification
+
+Human developers face similar challenges:
+
+- **Cognitive load** makes it hard to remember all rules while solving problems
+- **Time pressure** leads to skipping checks "just this once"
+- **Inconsistent application** as different developers interpret rules differently
+
+## Rules vs Tasks: The Critical Distinction
+
+Understanding this difference is essential for effective software development:
+
+- **Rules** define quality standards (how you build): "No hardcoded secrets", "100% test coverage"
+- **Tasks** define work items (what you build): "Add user authentication", "Fix bug #123"
+
+This repository focuses on rules because they:
+- Apply continuously across all work
+- Can be automatically checked
+- Prevent entire categories of problems
+- Don't change based on features
+
+## What's in This Repository
+
+This repository contains two complementary components:
+
+1. **[codebase-rules.md](./codebase-rules.md)** - Human-readable rule documentation
+2. **[rulehawk.yaml](./rulehawk.yaml)** - Machine-readable rule definitions
+3. **[rulehawk/](./rulehawk/)** - CLI tool that enforces the rules
+
+## The Rules
+
+Our rules are organized by when they apply in the development lifecycle:
+
+### Security Rules (S1-S8)
+
+These rules prevent security vulnerabilities:
+
+- **S1: No Hardcoded Secrets** - API keys, passwords, tokens must use environment variables
+- **S2: Secure Credential Storage** - Use secret managers, not plain text
+- **S3: Authentication Best Practices** - Standard patterns, proper password hashing
+- **S4: Input Validation** - Prevent SQL injection, XSS, command injection
+- **S5: Dependency Security** - Scan and update vulnerable dependencies
+
+### Quality Rules (C1-C5)
+
+These rules ensure maintainable, reliable code:
+
+- **C1: Zero Warnings** - Clean builds without compiler/linter warnings
+- **C2: Test Coverage** - Minimum 80% coverage with meaningful tests
+- **C3: CI Must Pass** - All automated checks green before merge
+- **C4: Documentation Complete** - APIs documented with examples
+- **C5: Security Review** - Verify security compliance for sensitive changes
+
+### Practice Rules (A1-A3, P1-P2, F1-F3)
+
+These rules enforce consistent development practices:
+
+- **A1: Code Formatting** - Consistent style across all files
+- **A2: Organize Files** - Proper structure for experiments and debug code
+- **A3: Branch Protection** - No direct commits to main/master
+- **P1: Environment Validation** - Verify setup before starting work
+- **F1: Document Public APIs** - Clear documentation for interfaces
+
+## RuleHawk: The Enforcement Engine
+
+RuleHawk is a lightweight CLI tool that makes these rules enforceable, not just documented. Instead of hoping everyone remembers the rules, RuleHawk checks them automatically.
+
+### Why RuleHawk Exists
+
+Traditional approaches to code quality fail because:
+
+- **Documentation** like `CONTRIBUTING.md` provides guidelines but no enforcement
+- **Code reviews** catch issues late and inconsistently
+- **AI agents** lose context and can't self-validate their compliance
+
+RuleHawk solves this by providing:
+
+- **External validation** that can't be overridden by agents
+- **Immediate feedback** during development, not after
+- **Consistent enforcement** regardless of who's coding
+
+### Quick Start with RuleHawk
+
+Install and start using RuleHawk:
 
 ```bash
-# Install RuleBird
-cd rulebird
+# Install from source
+cd rulehawk
 pip install -e .
 
 # Initialize in your project
 cd your-project
-rulebird init
+rulehawk init  # Creates rulehawk.yaml
 
-# Check rules
-rulebird check
+# Run checks
+rulehawk check           # Check all rules
+rulehawk check --fix     # Auto-fix what's possible
+rulehawk check --enforce # Exit 1 if any fail
 ```
 
-## Purpose
+### For AI Agents
 
-This repository provides both:
-- **Rule Definitions**: Explicit rules that both humans and AI agents must follow when contributing code
-- **RuleBird CLI**: A lightweight tool that enforces these rules automatically, perfect for AI agents that might forget or lose context
+Include this in your agent instructions for seamless integration:
 
-## Why These Rules Matter
+```
+Before starting any coding task, run: rulehawk preflight
+Parse the YAML output to understand initial state.
 
-With the increasing use of AI coding assistants and agents, it's critical to have explicit, machine-readable rules that ensure:
+After making changes, run: rulehawk inflight --fix
+This automatically fixes formatting and simple issues.
 
-- Code changes pass basic quality checks before merging
-- Tests actually validate functionality (not just achieve coverage)
-- Documentation stays current with code changes
-- Consistent style and formatting across all contributions
-- No debug code or temporary fixes make it to production
+Before marking task complete, run: rulehawk postflight --fix
+Then run: rulehawk postflight
+If exit code is 1, parse the YAML output to see remaining issues and fix them.
+```
 
-## Key Quality Gates
+This workflow leverages RuleHawk's simple two-mode design:
+- **Default check mode** returns structured YAML and proper exit codes
+- **Fix mode** (`--fix`) automatically resolves simple issues
+- **No context waste** - agents parse YAML output instead of ingesting rules
 
-### 1. Branch Protection
-All work happens on feature branches. The main branch requires passing CI before merge.
+### For Human Developers
 
-### 2. Zero Warnings Policy
-Code must compile and run without warnings. This catches potential issues early.
+Integrate RuleHawk into your workflow:
 
-### 3. Test Coverage Requirements
-Minimum coverage thresholds with meaningful tests that validate actual behavior.
+```bash
+# Pre-commit hook
+echo "rulehawk postflight || exit 1" > .git/hooks/pre-commit
 
-### 4. Documentation Standards
-Public APIs must have examples. Changes require updated docs and meaningful commit messages.
+# CI/CD pipeline
+rulehawk check --enforce
+```
 
-### 5. Clean Code Practices
-Automated formatting, linting, and checks for debug artifacts (console.logs, TODO comments, etc.)
+## Configuration: rulehawk.yaml
 
-## How to Use These Rules
+The `rulehawk.yaml` file contains all rules in a machine-readable format. It's designed to be:
 
-1. **For Human Developers**: Review `codebase-rules.md` and configure your IDE to catch violations early
-2. **For AI Agents**: Include `codebase-rules.md` in your prompts or system instructions
-3. **For CI/CD**: Implement automated checks that enforce these rules on every pull request
+- **Self-documenting** with clear descriptions of each rule
+- **Customizable** for project-specific needs
+- **Version-controlled** to track rule changes
 
-## Implementation
+Example structure:
 
-These rules are designed to be:
-- **Explicit**: Clear pass/fail criteria with no ambiguity
-- **Automated**: Can be enforced through tooling and CI pipelines
-- **Language-agnostic**: Core principles apply regardless of tech stack
-- **Agent-friendly**: Written in a format that AI coding assistants can parse and follow
+```yaml
+rules:
+  S1:
+    name: No Hardcoded Secrets
+    phase: security
+    severity: error
+    description: |
+      Never commit credentials in code.
+      Use environment variables or secret managers.
+    check:
+      command: "gitleaks detect"
+    auto_fixable: false
+```
+
+## Key Benefits
+
+Using enforced codebase rules with RuleHawk provides:
+
+1. **Reduced context burden** - Agents don't need to remember rules
+2. **Consistent quality** - Same standards for humans and AI
+3. **Early detection** - Catch issues during development
+4. **External validation** - Can't be gamed or misreported
+5. **Automated fixes** - Many issues fixed automatically
 
 ## Getting Started
 
-1. Read [`codebase-rules.md`](./codebase-rules.md) for the complete rule set
-2. Adapt the rules to your project's specific needs
-3. Set up automated enforcement through your CI/CD pipeline
-4. Include the rules in your AI agent prompts or configuration
+Follow these steps to implement codebase rules in your project:
+
+1. **Review the rules** in [codebase-rules.md](./codebase-rules.md)
+2. **Install RuleHawk** from the [rulehawk/](./rulehawk/) directory
+3. **Run `rulehawk init`** in your project
+4. **Customize rules** in your `rulehawk.yaml`
+5. **Add to CI/CD** for automatic enforcement
 
 ## Contributing
 
-When proposing changes to these rules:
-1. Document the specific problem the change addresses
-2. Provide examples of how the rule would be applied
-3. Consider impact on both human and AI workflows
-4. Submit a pull request with your rationale
+We welcome contributions to both the rules and RuleHawk:
 
-Remember: These rules exist to maintain quality, not to create bureaucracy. If a rule is blocking legitimate work, that's a bug in the rule that should be fixed.
+- **Suggest new rules** based on problems you've encountered
+- **Improve RuleHawk** with new features or bug fixes
+- **Share experiences** with what works in your team
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Learn More
+
+Explore additional resources:
+
+- **[Introduction to Rules](rulehawk/docs/introduction.md)** - Deep dive into why rules matter
+- **[RuleHawk Documentation](rulehawk/README.md)** - Complete tool documentation
+- **[Custom Rules Guide](rulehawk/docs/custom-rules.md)** - Creating project-specific rules
+
+Remember: The goal isn't to restrict development but to automate quality checks so developers and agents can focus on solving interesting problems rather than remembering routine checks.

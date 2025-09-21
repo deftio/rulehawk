@@ -219,7 +219,7 @@ def run_security_phase(config: Dict[str, Any]) -> Dict[str, Any]:
             return {
                 'success': False,
                 'message': "Security issues detected",
-                'details': ["Run: rulebird check --phase security for details"]
+                'details': ["Run: rulehawk check --phase security for details"]
             }
     except:
         # Gitleaks not installed

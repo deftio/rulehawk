@@ -45,7 +45,7 @@ class RuleRunner:
             if (self.project_root / 'tsconfig.json').exists():
                 return 'typescript'
             return 'javascript'
-        elif (self.project_root / 'requirements.txt').exists() or
+        elif ((self.project_root / 'requirements.txt').exists() or
               (self.project_root / 'pyproject.toml').exists() or
               (self.project_root / 'setup.py').exists()):
             return 'python'
@@ -214,7 +214,7 @@ class RuleRunner:
 
     def _log_results(self, results: Dict[str, Any]):
         """Log results to audit file"""
-        log_dir = Path(self.config.get('logging', {}).get('dir', '.rulebird'))
+        log_dir = Path(self.config.get('logging', {}).get('dir', '.rulehawk'))
         log_dir.mkdir(exist_ok=True)
 
         log_file = log_dir / 'audit.jsonl'

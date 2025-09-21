@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rulehawk"
+version = "0.1.0"
+description = "Lightweight rule enforcement for codebases - perfect for humans and AI agents"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "RuleHawk Team"},
+]
+keywords = ["linting", "code-quality", "ci-cd", "ai-agents", "development-tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "tomli>=2.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+mcp = [
+    "mcp>=0.1",
+]
+
+[project.scripts]
+rulehawk = "rulehawk.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/rulehawk"
+Documentation = "https://github.com/yourusername/rulehawk/docs"
+Repository = "https://github.com/yourusername/rulehawk"
+Issues = "https://github.com/yourusername/rulehawk/issues"
+
+[tool.setuptools]
+packages = ["rulehawk"]
+
+[tool.setuptools.package-data]
+rulehawk = ["*.yaml", "*.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "UP", # pyupgrade
+    "B",  # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "rulehawk/tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-ra -q --strict-markers"
+
+[tool.coverage.run]
+source = ["rulehawk"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass",
+    "except ImportError:",
+]

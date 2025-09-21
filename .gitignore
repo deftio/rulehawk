@@ -1,0 +1,36 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# RuleHawk specific
+.rulehawk/
+*.jsonl
+.rulehawk.yaml
+
+# Development
+scratch/
+debug/
+temp/
+test-*/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
