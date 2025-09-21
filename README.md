@@ -1,47 +1,87 @@
-# Codebase Standards — Why They Exist
+# RuleBird 🦉 - Codebase Rules for Agents and Humans
 
-This repository enforces a strict set of development rules (see [`codebase-rules.md`](./codebase-rules.md)) to ensure that every change is:
+A lightweight CLI tool and rule framework to maintain code quality standards when working with both human developers and AI coding agents.
 
-- **Safe** — won’t break production or degrade user experience  
-- **Maintainable** — easy for future developers to understand and extend  
-- **Consistent** — uses a single, unified style across all languages and modules  
-- **High-quality** — tested, documented, and warning-free
+## What's in This Repo
 
-These rules are not about slowing you down — they are about reducing rework, surprises, and firefighting later.  
-They make sure that every contributor (human or automated) leaves the codebase better than they found it.
+1. **[`codebase-rules.md`](./codebase-rules.md)** - Comprehensive rule definitions for code quality
+2. **[`rulebird/`](./rulebird/)** - RuleBird CLI tool that enforces these rules automatically
 
-## Goals
+## Quick Start with RuleBird
 
-### 1. Prevent Production Breakages
-Working on a branch, requiring green CI, and blocking on warnings ensures the main branch always deploys safely.
+```bash
+# Install RuleBird
+cd rulebird
+pip install -e .
 
-### 2. Keep the Codebase Clean
-Formatting, linting, and banning debug artifacts keep the repo consistent, readable, and free of clutter.
+# Initialize in your project
+cd your-project
+rulebird init
 
-### 3. Future-Proof the Code
-API docs with examples, meaningful commit messages, and updated release notes help new developers understand why code exists and how to use it — months or years from now.
+# Check rules
+rulebird check
+```
 
-### 4. Build Confidence Through Tests
-Deterministic tests with strict coverage thresholds mean every merge is backed by real, automated verification — not guesswork.
+## Purpose
 
-### 5. Encourage Honest Testing
-Rejecting “fake” mocks forces contributors to write tests that actually validate logic, not just turn CI green.
+This repository provides both:
+- **Rule Definitions**: Explicit rules that both humans and AI agents must follow when contributing code
+- **RuleBird CLI**: A lightweight tool that enforces these rules automatically, perfect for AI agents that might forget or lose context
 
-## Philosophy
+## Why These Rules Matter
 
-A good codebase is like a well-kept lab notebook:  
-anyone should be able to open it, see what was changed, why it was changed, how it was validated, and what the current state is — without guessing.
+With the increasing use of AI coding assistants and agents, it's critical to have explicit, machine-readable rules that ensure:
 
-These rules turn that philosophy into a checklist the entire team (and coding agents) can follow.
+- Code changes pass basic quality checks before merging
+- Tests actually validate functionality (not just achieve coverage)
+- Documentation stays current with code changes
+- Consistent style and formatting across all contributions
+- No debug code or temporary fixes make it to production
 
-## TL;DR
-If you follow these rules, you get:
+## Key Quality Gates
 
-- Predictable builds and deployments  
-- Cleaner diffs and fewer style debates  
-- Faster onboarding for new contributors  
-- Fewer regressions and late-night fire drills  
-- A codebase that scales with the team
+### 1. Branch Protection
+All work happens on feature branches. The main branch requires passing CI before merge.
 
-> **Tip:** If you ever find yourself thinking “this is overkill,” document why and open a PR to discuss relaxing the rule.  
-> The rules are meant to protect the project, not block progress — but any exception must be deliberate, reviewed, and recorded.
+### 2. Zero Warnings Policy
+Code must compile and run without warnings. This catches potential issues early.
+
+### 3. Test Coverage Requirements
+Minimum coverage thresholds with meaningful tests that validate actual behavior.
+
+### 4. Documentation Standards
+Public APIs must have examples. Changes require updated docs and meaningful commit messages.
+
+### 5. Clean Code Practices
+Automated formatting, linting, and checks for debug artifacts (console.logs, TODO comments, etc.)
+
+## How to Use These Rules
+
+1. **For Human Developers**: Review `codebase-rules.md` and configure your IDE to catch violations early
+2. **For AI Agents**: Include `codebase-rules.md` in your prompts or system instructions
+3. **For CI/CD**: Implement automated checks that enforce these rules on every pull request
+
+## Implementation
+
+These rules are designed to be:
+- **Explicit**: Clear pass/fail criteria with no ambiguity
+- **Automated**: Can be enforced through tooling and CI pipelines
+- **Language-agnostic**: Core principles apply regardless of tech stack
+- **Agent-friendly**: Written in a format that AI coding assistants can parse and follow
+
+## Getting Started
+
+1. Read [`codebase-rules.md`](./codebase-rules.md) for the complete rule set
+2. Adapt the rules to your project's specific needs
+3. Set up automated enforcement through your CI/CD pipeline
+4. Include the rules in your AI agent prompts or configuration
+
+## Contributing
+
+When proposing changes to these rules:
+1. Document the specific problem the change addresses
+2. Provide examples of how the rule would be applied
+3. Consider impact on both human and AI workflows
+4. Submit a pull request with your rationale
+
+Remember: These rules exist to maintain quality, not to create bureaucracy. If a rule is blocking legitimate work, that's a bug in the rule that should be fixed.
