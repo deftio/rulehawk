@@ -49,7 +49,7 @@ Comprehensive documentation with enforced quality standards:
 Complete configuration management:
 
 - [x] **Master rulehawk.yaml** file structure defined
-- [x] **Config file loading** from .rulehawk.yaml or rulehawk.yaml
+- [x] **Config file loading** from rulehawk.yaml or rulehawk.yaml
 - [x] **Environment variable overrides** for flexibility
 - [x] **Custom rules section** in configuration
 

@@ -1,0 +1,25 @@
+# RuleHawk Rule Exceptions File
+# ==============================
+# This is a plain text file (NOT YAML) that lists rules to skip.
+# Each line specifies one rule exception with an explanation.
+#
+# Format:
+#   RULE_ID:Explanation why this rule is skipped
+#   RULE_ID:until=YYYY-MM-DD:Temporary exception with expiry date
+#
+# Important:
+# - One rule per line
+# - Always provide a clear explanation after the colon
+# - Lines starting with # are comments
+# - Empty lines are ignored
+# - This file should be committed to version control
+#
+# Examples:
+#   S1:Using AWS Secrets Manager instead of env vars
+#   C2:until=2024-02-01:Waiting for test framework upgrade
+#   P2:Task planning not needed for small fixes
+#
+# Current exceptions for RuleHawk development:
+A3:Development happens on main branch for now
+P2:Task planning optional for development
+F2:Task planning not in use

@@ -3,10 +3,11 @@ Project detection system for RuleHawk
 """
 
 from pathlib import Path
-from typing import Dict, Any
-from .python_detector import PythonDetector
-from .javascript_detector import JavaScriptDetector
+from typing import Any, Dict
+
 from .cpp_detector import CppDetector
+from .javascript_detector import JavaScriptDetector
+from .python_detector import PythonDetector
 
 
 def detect_project(project_root: Path = None) -> Dict[str, Any]:
@@ -25,7 +26,7 @@ def detect_project(project_root: Path = None) -> Dict[str, Any]:
     detectors = [
         PythonDetector(project_root),
         JavaScriptDetector(project_root),
-        CppDetector(project_root)
+        CppDetector(project_root),
     ]
 
     for detector in detectors:
@@ -34,19 +35,14 @@ def detect_project(project_root: Path = None) -> Dict[str, Any]:
 
     # Fallback - unknown project type
     return {
-        'language': 'unknown',
-        'message': 'Could not detect project type',
-        'suggestions': [
-            'Add a package.json for JavaScript/TypeScript',
-            'Add a setup.py or pyproject.toml for Python',
-            'Add a Makefile or CMakeLists.txt for C/C++'
-        ]
+        "language": "unknown",
+        "message": "Could not detect project type",
+        "suggestions": [
+            "Add a package.json for JavaScript/TypeScript",
+            "Add a setup.py or pyproject.toml for Python",
+            "Add a Makefile or CMakeLists.txt for C/C++",
+        ],
     }
 
 
-__all__ = [
-    'detect_project',
-    'PythonDetector',
-    'JavaScriptDetector',
-    'CppDetector'
-]
+__all__ = ["detect_project", "PythonDetector", "JavaScriptDetector", "CppDetector"]

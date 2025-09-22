@@ -2,11 +2,11 @@
 Base detector class for language/project detection
 """
 
+import json
+import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-import subprocess
-import json
+from typing import Any, Dict, List, Optional
 
 
 class LanguageDetector(ABC):
@@ -30,31 +30,18 @@ class LanguageDetector(ABC):
         """Check if a command-line tool is installed"""
         try:
             # Try 'which' first (Unix-like systems)
-            result = subprocess.run(
-                ['which', command],
-                capture_output=True,
-                text=True,
-                timeout=2
-            )
+            result = subprocess.run(["which", command], capture_output=True, text=True, timeout=2)
             if result.returncode == 0:
                 return True
 
             # Try 'where' for Windows
-            result = subprocess.run(
-                ['where', command],
-                capture_output=True,
-                text=True,
-                timeout=2
-            )
+            result = subprocess.run(["where", command], capture_output=True, text=True, timeout=2)
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
             # Fallback: try running the command with --version
             try:
                 result = subprocess.run(
-                    [command, '--version'],
-                    capture_output=True,
-                    text=True,
-                    timeout=2
+                    [command, "--version"], capture_output=True, text=True, timeout=2
                 )
                 return result.returncode == 0
             except:
@@ -64,11 +51,7 @@ class LanguageDetector(ABC):
         """Run a command and return output"""
         try:
             result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                cwd=self.project_root,
-                timeout=5
+                command, capture_output=True, text=True, cwd=self.project_root, timeout=5
             )
             if result.returncode == 0:
                 return result.stdout.strip()
@@ -86,13 +69,13 @@ class LanguageDetector(ABC):
             return None
 
         try:
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 data = json.load(f)
                 return data if isinstance(data, dict) else None
         except json.JSONDecodeError as e:
             print(f"Warning: Invalid JSON in {filepath}: {e}")
             return None
-        except (OSError, IOError) as e:
+        except OSError as e:
             print(f"Warning: Could not read {filepath}: {e}")
             return None
         except Exception:
@@ -105,13 +88,13 @@ class LanguageDetector(ABC):
 
         try:
             lines = []
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 for i, line in enumerate(f):
                     if i >= max_lines:
                         break
                     lines.append(line.strip())
             return lines
-        except (OSError, IOError, UnicodeDecodeError) as e:
+        except (OSError, UnicodeDecodeError) as e:
             # Log warning but don't crash
             print(f"Warning: Could not read {filepath}: {e}")
             return []

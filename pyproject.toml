@@ -7,10 +7,10 @@ name = "rulehawk"
 version = "0.1.0"
 description = "Lightweight rule enforcement for codebases - perfect for humans and AI agents"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "RuleHawk Team"},
+    {name = "RuleHawk Team", email = "your-email@example.com"},
 ]
 keywords = ["linting", "code-quality", "ci-cd", "ai-agents", "development-tools"]
 classifiers = [
@@ -47,10 +47,10 @@ mcp = [
 rulehawk = "rulehawk.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/rulehawk"
-Documentation = "https://github.com/yourusername/rulehawk/docs"
-Repository = "https://github.com/yourusername/rulehawk"
-Issues = "https://github.com/yourusername/rulehawk/issues"
+Homepage = "https://github.com/deftio/rulehawk"
+Documentation = "https://github.com/deftio/rulehawk/tree/main/docs"
+Repository = "https://github.com/deftio/rulehawk"
+Issues = "https://github.com/deftio/rulehawk/issues"
 
 [tool.hatch.build]
 packages = ["rulehawk"]

@@ -19,9 +19,20 @@ ENV/
 env/
 .venv/
 
+# Testing and Coverage
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+*.cover
+.hypothesis/
+
 # RuleHawk specific
-.rulehawk/
-*.jsonl
+# Note: rulehawk_data/ is intentionally NOT ignored - it should be committed
 .rulehawk.yaml
 
 # Development
@@ -29,8 +40,14 @@ scratch/
 debug/
 temp/
 test-*/
+*.log
+*.bak
+*.tmp
 
 # Build artifacts
 dist/
 build/
 *.egg-info/
+*.egg
+PIPFILE.lock
+*.whl

@@ -21,7 +21,7 @@ You can adopt the rule definitions on their own and implement your own enforceme
 
 ## Key Capabilities
 
-RuleHawk's rule definitions provide structure and consistency regardless of how you choose to enforce them:
+RuleHawk's rule definitions are intended to provide structure and consistency regardless of how you choose to enforce them:
 
 - **Phase-Based Organization**: Rules are structured around natural development workflows (pre-flight, in-flight, post-flight)
 - **Machine-Readable Format**: YAML structure that agents and tools can easily parse and interpret
@@ -63,7 +63,7 @@ This repository focuses on rules because they:
 
 This repository contains two complementary components:
 
-1. **[codebase-rules.md](./codebase-rules.md)** - Human-readable rule documentation
+1. **[codebase-rules.md](./docs/codebase-rules.md)** - Human-readable rule documentation
 2. **[rulehawk.yaml](./rulehawk.yaml)** - Machine-readable rule definitions
 3. **[rulehawk/](./rulehawk/)** - CLI tool that enforces the rules
 
@@ -121,35 +121,34 @@ RuleHawk solves this by providing:
 
 ### Quick Start with RuleHawk
 
-Install and start using RuleHawk with `uv` (modern, fast Python package manager):
+**Install RuleHawk in your project** (like any Python library):
 
 ```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Option 1: From PyPI (when published)
+pip install rulehawk
 
-# Clone and install RuleHawk
-git clone <repo-url> rulehawk
+# Option 2: From GitHub (current method)
+pip install git+https://github.com/deftio/rulehawk.git
+
+# Option 3: For development on RuleHawk itself
+git clone https://github.com/deftio/rulehawk
 cd rulehawk
-uv venv
-uv pip install -e .
-
-# Use RuleHawk in your project
-cd your-project
-uv run rulehawk init     # Creates rulehawk.yaml
-
-# Run checks
-uv run rulehawk check           # Check all rules
-uv run rulehawk check --fix     # Auto-fix what's possible
+pip install -e .
 ```
 
-Or with traditional pip:
+**Use RuleHawk in your project**:
 
 ```bash
-# Install from source
-pip install -e .
+# In your project directory
+cd ~/my-awesome-project
+
+# Initialize RuleHawk
+rulehawk init      # Creates rulehawk.yaml
 
 # Run checks
-rulehawk check           # Check all rules
+rulehawk check     # Check all rules
+rulehawk preflight # Before starting work
+rulehawk postflight --fix # Before committing
 ```
 
 ### For AI Agents
@@ -219,15 +218,101 @@ Using enforced codebase rules with RuleHawk provides:
 4. **External validation** - Can't be gamed or misreported
 5. **Automated fixes** - Many issues fixed automatically
 
-## Getting Started
+## Quick Start
 
-Follow these steps to implement codebase rules in your project:
+### Installation
 
-1. **Review the rules** in [codebase-rules.md](./codebase-rules.md)
-2. **Install RuleHawk** from the [rulehawk/](./rulehawk/) directory
-3. **Run `rulehawk init`** in your project
-4. **Customize rules** in your `rulehawk.yaml`
-5. **Add to CI/CD** for automatic enforcement
+#### From PyPI (coming soon)
+```bash
+# Once published, install directly:
+pip install rulehawk
+```
+
+#### From Source (current method)
+```bash
+# Clone the repository
+git clone https://github.com/deftio/rulehawk
+cd rulehawk
+
+# Install using uv (recommended)
+uv venv
+uv pip install -e .
+
+# OR install using pip
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -e .
+```
+
+### Basic Usage
+
+```bash
+# 1. Navigate to YOUR project (not the RuleHawk source)
+cd /path/to/your-project
+
+# 2. Initialize RuleHawk in your project
+rulehawk init  # or 'uv run rulehawk init' if installed from source
+
+# 3. Run checks
+rulehawk preflight   # Before starting work
+rulehawk inflight    # During development
+rulehawk postflight  # Before committing
+
+# Check all rules at once
+rulehawk check
+
+# Auto-fix issues where possible
+rulehawk check --fix
+
+# Different output formats
+rulehawk check --output yaml     # For agents (structured data)
+rulehawk check --verbosity verbose  # For debugging
+```
+
+**Note**: If you installed from source with `uv`, prefix commands with `uv run`:
+```bash
+uv run rulehawk init
+uv run rulehawk check
+```
+
+### Integrate with Your Project
+
+```bash
+# Generate project-specific scripts (npm, make, etc.)
+rulehawk integrate
+
+# This creates commands like:
+# npm run preflight   (for Node.js)
+# make preflight      (for Python/Make)
+# cargo preflight     (for Rust)
+```
+
+### Skip Rules That Don't Apply
+
+Create `rulehawkignore` file:
+```
+# Note: This is a plain text file, not YAML
+A3:Using feature branches locally
+P2:Task planning not needed for hotfixes
+```
+
+### Interactive Learning (NEW!)
+
+RuleHawk can learn your project's commands through interaction:
+
+```bash
+# Start interactive MCP server
+rulehawk mcp --interactive
+
+# RuleHawk will ask agents for commands when needed
+# Commands are saved in rulehawk_data/ for future use
+```
+
+With interactive mode, RuleHawk:
+- 🤔 Asks agents for the right commands
+- ✅ Verifies commands are safe and work
+- 💾 Remembers for next time
+- 🚀 Becomes self-sufficient
 
 ## Contributing
 
@@ -245,8 +330,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 Explore additional resources:
 
-- **[Introduction to Rules](rulehawk/docs/introduction.md)** - Deep dive into why rules matter
-- **[RuleHawk Documentation](rulehawk/README.md)** - Complete tool documentation
-- **[Custom Rules Guide](rulehawk/docs/custom-rules.md)** - Creating project-specific rules
+- **[Documentation Overview](docs/README.md)** - Complete documentation
+- **[Configuration Guide](docs/configuration.md)** - Customize RuleHawk for your project
+- **[MCP Integration](docs/mcp.md)** - AI agent integration with interactive learning
 
 Remember: The goal isn't to restrict development but to automate quality checks so developers and agents can focus on solving interesting problems rather than remembering routine checks.

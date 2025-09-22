@@ -3,25 +3,25 @@
 RuleHawk CLI - Main entry point
 """
 
-import click
 import json
 import sys
-from pathlib import Path
-from typing import List, Optional
 from datetime import datetime
+from pathlib import Path
+
+import click
 
 from . import get_logo
+from .config.loader import ConfigLoader
+from .rules.enhanced_runner import EnhancedRuleRunner
 from .rules.registry import RuleRegistry
 from .rules.runner import RuleRunner
-from .rules.enhanced_runner import EnhancedRuleRunner
-from .config.loader import ConfigLoader
 
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.option('--json', 'output_json', is_flag=True, help='Output in JSON format')
-@click.option('--quiet', is_flag=True, help='Minimal output')
-@click.option('--verbose', is_flag=True, help='Verbose output')
+@click.option("--json", "output_json", is_flag=True, help="Output in JSON format")
+@click.option("--quiet", is_flag=True, help="Minimal output")
+@click.option("--verbose", is_flag=True, help="Verbose output")
 def cli(ctx, output_json, quiet, verbose):
     """
     RuleHawk 🦅 - Lightweight rule enforcement for codebases
@@ -30,9 +30,9 @@ def cli(ctx, output_json, quiet, verbose):
     Perfect for humans and AI agents alike!
     """
     ctx.ensure_object(dict)
-    ctx.obj['output_json'] = output_json
-    ctx.obj['quiet'] = quiet
-    ctx.obj['verbose'] = verbose
+    ctx.obj["output_json"] = output_json
+    ctx.obj["quiet"] = quiet
+    ctx.obj["verbose"] = verbose
 
     if ctx.invoked_subcommand is None:
         if not quiet and not output_json:
@@ -41,17 +41,33 @@ def cli(ctx, output_json, quiet, verbose):
 
 
 @cli.command()
-@click.option('--phase', type=click.Choice(['preflight', 'inflight', 'postflight', 'security', 'all']),
-              default='all', help='Which phase of rules to check')
-@click.option('--fix', is_flag=True, help='Attempt to auto-fix issues')
-@click.option('--output', type=click.Choice(['yaml', 'json', 'markdown']),
-              default='yaml', help='Output format (default: yaml)')
-@click.option('--verbosity', type=click.Choice(['minimal', 'normal', 'verbose']),
-              default='normal', help='Verbosity level for output')
-@click.option('--show-skipped', is_flag=True, help='Show skipped rules in output')
-@click.option('--ai', type=click.Choice(['claude', 'openai', 'cursor', 'none']),
-              default='none', help='AI provider for complex checks')
-@click.argument('rules', nargs=-1)
+@click.option(
+    "--phase",
+    type=click.Choice(["preflight", "inflight", "postflight", "security", "all"]),
+    default="all",
+    help="Which phase of rules to check",
+)
+@click.option("--fix", is_flag=True, help="Attempt to auto-fix issues")
+@click.option(
+    "--output",
+    type=click.Choice(["yaml", "json", "markdown"]),
+    default="yaml",
+    help="Output format (default: yaml)",
+)
+@click.option(
+    "--verbosity",
+    type=click.Choice(["minimal", "normal", "verbose"]),
+    default="normal",
+    help="Verbosity level for output",
+)
+@click.option("--show-skipped", is_flag=True, help="Show skipped rules in output")
+@click.option(
+    "--ai",
+    type=click.Choice(["claude", "openai", "cursor", "none"]),
+    default="none",
+    help="AI provider for complex checks",
+)
+@click.argument("rules", nargs=-1)
 @click.pass_context
 def check(ctx, phase, fix, output, verbosity, show_skipped, ai, rules):
     """
@@ -64,10 +80,10 @@ def check(ctx, phase, fix, output, verbosity, show_skipped, ai, rules):
         rulehawk check S1 S2             # Check specific rules
         rulehawk check --fix             # Auto-fix what's possible
     """
-    quiet = ctx.obj.get('quiet', False)
-    verbose = ctx.obj.get('verbose', False)
+    quiet = ctx.obj.get("quiet", False)
+    verbose = ctx.obj.get("verbose", False)
 
-    if not quiet and output == 'markdown':
+    if not quiet and output == "markdown":
         click.echo(f"🦅 rulehawk checking {phase} rules...")
 
     # Load configuration
@@ -82,68 +98,79 @@ def check(ctx, phase, fix, output, verbosity, show_skipped, ai, rules):
     results = enhanced_runner.check_rules(rules_to_check, auto_fix=fix)
 
     # Output results in requested format
-    if output == 'json':
+    if output == "json":
         click.echo(json.dumps(results, indent=2))
-    elif output == 'yaml':
+    elif output == "yaml":
         import yaml
+
         # Format for YAML output
         yaml_output = {
-            'summary': {
-                'total': results['total_count'],
-                'passed': results['passed_count'],
-                'failed': results['failed_count'],
-                'skipped': results.get('skipped_count', 0),
-                'warnings': results.get('warning_count', 0),
+            "summary": {
+                "total": results["total_count"],
+                "passed": results["passed_count"],
+                "failed": results["failed_count"],
+                "skipped": results.get("skipped_count", 0),
+                "warnings": results.get("warning_count", 0),
             },
-            'violations': [],
-            'skipped': [] if show_skipped else None,
-            'fixed': [] if fix else None
+            "violations": [],
+            "skipped": [] if show_skipped else None,
+            "fixed": [] if fix else None,
         }
 
-        for detail in results['details']:
-            if detail['status'] == 'failed':
+        for detail in results["details"]:
+            if detail["status"] == "failed":
                 violation = {
-                    'rule': detail.get('rule', detail.get('rule_id', '')),
-                    'name': detail.get('name', ''),
-                    'severity': detail.get('severity', 'error'),
-                    'message': detail.get('message', ''),
+                    "rule": detail.get("rule", detail.get("rule_id", "")),
+                    "name": detail.get("name", ""),
+                    "severity": detail.get("severity", "error"),
+                    "message": detail.get("message", ""),
                 }
                 # Add details if in verbose mode
-                if verbosity == 'verbose' and detail.get('details'):
-                    violation['details'] = detail['details']
-                if detail.get('fixable') or detail.get('fix_available'):
-                    violation['fixable'] = True
-                    if verbosity == 'verbose' and detail.get('fix_command'):
-                        violation['fix_command'] = detail['fix_command']
-                yaml_output['violations'].append(violation)
-            elif detail['status'] == 'skipped' and show_skipped:
-                yaml_output['skipped'].append({
-                    'rule': detail.get('rule', detail.get('rule_id', '')),
-                    'name': detail.get('name', ''),
-                    'reason': detail.get('skip_reason', detail.get('message', ''))
-                })
-            elif fix and detail['status'] == 'fixed':
-                yaml_output['fixed'].append({
-                    'rule': detail.get('rule', detail.get('rule_id', '')),
-                    'name': detail.get('name', ''),
-                    'message': detail.get('message', '')
-                })
+                if verbosity == "verbose" and detail.get("details"):
+                    violation["details"] = detail["details"]
+                if detail.get("fixable") or detail.get("fix_available"):
+                    violation["fixable"] = True
+                    if verbosity == "verbose" and detail.get("fix_command"):
+                        violation["fix_command"] = detail["fix_command"]
+                yaml_output["violations"].append(violation)
+            elif detail["status"] == "skipped" and show_skipped:
+                yaml_output["skipped"].append(
+                    {
+                        "rule": detail.get("rule", detail.get("rule_id", "")),
+                        "name": detail.get("name", ""),
+                        "reason": detail.get("skip_reason", detail.get("message", "")),
+                    }
+                )
+            elif fix and detail["status"] == "fixed":
+                yaml_output["fixed"].append(
+                    {
+                        "rule": detail.get("rule", detail.get("rule_id", "")),
+                        "name": detail.get("name", ""),
+                        "message": detail.get("message", ""),
+                    }
+                )
 
         # Remove None values and empty lists
-        yaml_output = {k: v for k, v in yaml_output.items() if v is not None and (v != [] or k == 'violations')}
+        yaml_output = {
+            k: v for k, v in yaml_output.items() if v is not None and (v != [] or k == "violations")
+        }
         click.echo(yaml.dump(yaml_output, default_flow_style=False))
     else:  # markdown
         _print_results(results, quiet, verbose)
 
     # Exit code based on results (check mode fails on violations)
-    if results.get('failed_count', 0) > 0:
+    if results.get("failed_count", 0) > 0:
         sys.exit(1)
 
 
 @cli.command()
-@click.option('--fix', is_flag=True, help='Attempt to auto-fix issues')
-@click.option('--output', type=click.Choice(['yaml', 'json', 'markdown']),
-              default='yaml', help='Output format (default: yaml)')
+@click.option("--fix", is_flag=True, help="Attempt to auto-fix issues")
+@click.option(
+    "--output",
+    type=click.Choice(["yaml", "json", "markdown"]),
+    default="yaml",
+    help="Output format (default: yaml)",
+)
 @click.pass_context
 def preflight(ctx, fix, output):
     """Check preflight rules (before starting work)
@@ -153,13 +180,17 @@ def preflight(ctx, fix, output):
         rulehawk preflight --fix     # Auto-fix issues
         rulehawk preflight --output json  # JSON output
     """
-    ctx.invoke(check, phase='preflight', fix=fix, output=output)
+    ctx.invoke(check, phase="preflight", fix=fix, output=output)
 
 
 @cli.command()
-@click.option('--fix', is_flag=True, help='Attempt to auto-fix issues')
-@click.option('--output', type=click.Choice(['yaml', 'json', 'markdown']),
-              default='yaml', help='Output format (default: yaml)')
+@click.option("--fix", is_flag=True, help="Attempt to auto-fix issues")
+@click.option(
+    "--output",
+    type=click.Choice(["yaml", "json", "markdown"]),
+    default="yaml",
+    help="Output format (default: yaml)",
+)
 @click.pass_context
 def inflight(ctx, fix, output):
     """Check inflight rules (during development)
@@ -169,40 +200,64 @@ def inflight(ctx, fix, output):
         rulehawk inflight --fix     # Auto-fix issues
         rulehawk inflight --output json  # JSON output
     """
-    ctx.invoke(check, phase='inflight', fix=fix, output=output)
+    ctx.invoke(check, phase="inflight", fix=fix, output=output)
 
 
 @cli.command()
-@click.option('--port', default=5173, help='MCP server port')
-@click.option('--host', default='localhost', help='MCP server host')
-def mcp(port, host):
+@click.option("--port", default=5173, help="MCP server port")
+@click.option("--host", default="localhost", help="MCP server host")
+@click.option("--interactive/--classic", default=True, help="Use interactive learning mode")
+def mcp(port, host, interactive):
     """Start MCP server for AI interaction"""
     try:
+        from rulehawk.mcp import MCP_AVAILABLE
+
+        if not MCP_AVAILABLE:
+            click.echo("⚠️  MCP dependencies not installed")
+            click.echo("Install with: pip install mcp")
+            click.echo("\nNote: MCP is optional. RuleHawk works fine without it.")
+            click.echo("MCP enables better integration with AI assistants.")
+            sys.exit(1)
+
         import asyncio
-        from rulehawk.mcp.server import RuleHawkMCPServer
 
-        click.echo(f"Starting rulehawk MCP server on {host}:{port}")
-        click.echo("AI assistants can now interact with RuleHawk")
-        click.echo("Press Ctrl+C to stop")
+        if interactive:
+            from rulehawk.mcp.interactive_server import InteractiveRuleHawkMCP
 
-        server = RuleHawkMCPServer()
+            click.echo(f"🦅 Starting Interactive RuleHawk MCP server on {host}:{port}")
+            click.echo("✨ Agents can now teach me commands!")
+            click.echo("📚 Commands will be saved in rulehawk_data/ for future use")
+            click.echo("Press Ctrl+C to stop")
+            server = InteractiveRuleHawkMCP()
+        else:
+            from rulehawk.mcp.server import RuleHawkMCPServer
+
+            click.echo(f"🦅 Starting Classic RuleHawk MCP server on {host}:{port}")
+            click.echo("AI assistants can now interact with RuleHawk")
+            click.echo("Press Ctrl+C to stop")
+            server = RuleHawkMCPServer()
+
         asyncio.run(server.run())
 
     except KeyboardInterrupt:
-        click.echo("\nStopping MCP server")
+        click.echo("\n✅ MCP server stopped")
     except ImportError as e:
-        click.echo(f"Error: MCP dependencies not installed: {e}")
-        click.echo("Run: pip install mcp")
+        click.echo(f"⚠️  MCP module error: {e}")
+        click.echo("This is likely due to missing dependencies.")
         sys.exit(1)
     except Exception as e:
-        click.echo(f"Error starting MCP server: {e}")
+        click.echo(f"❌ Error starting MCP server: {e}")
         sys.exit(1)
 
 
 @cli.command()
-@click.option('--fix', is_flag=True, help='Attempt to auto-fix issues')
-@click.option('--output', type=click.Choice(['yaml', 'json', 'markdown']),
-              default='yaml', help='Output format (default: yaml)')
+@click.option("--fix", is_flag=True, help="Attempt to auto-fix issues")
+@click.option(
+    "--output",
+    type=click.Choice(["yaml", "json", "markdown"]),
+    default="yaml",
+    help="Output format (default: yaml)",
+)
 @click.pass_context
 def postflight(ctx, fix, output):
     """Check postflight rules (before committing)
@@ -212,13 +267,17 @@ def postflight(ctx, fix, output):
         rulehawk postflight --fix     # Auto-fix issues
         rulehawk postflight --output json  # JSON output
     """
-    ctx.invoke(check, phase='postflight', fix=fix, output=output)
+    ctx.invoke(check, phase="postflight", fix=fix, output=output)
 
 
 @cli.command()
-@click.option('--fix', is_flag=True, help='Attempt to auto-fix issues')
-@click.option('--output', type=click.Choice(['yaml', 'json', 'markdown']),
-              default='yaml', help='Output format (default: yaml)')
+@click.option("--fix", is_flag=True, help="Attempt to auto-fix issues")
+@click.option(
+    "--output",
+    type=click.Choice(["yaml", "json", "markdown"]),
+    default="yaml",
+    help="Output format (default: yaml)",
+)
 @click.pass_context
 def security(ctx, fix, output):
     """Check security rules
@@ -228,19 +287,45 @@ def security(ctx, fix, output):
         rulehawk security --fix     # Auto-fix issues
         rulehawk security --output json  # JSON output
     """
-    ctx.invoke(check, phase='security', fix=fix, output=output)
+    ctx.invoke(check, phase="security", fix=fix, output=output)
 
 
 @cli.command()
-def init():
-    """Initialize RuleHawk in current project"""
-    config_path = Path('.rulehawk.yaml')
+@click.option("--with-scripts", is_flag=True, help="Also generate project integration scripts")
+@click.option("--force", is_flag=True, help="Overwrite existing configuration")
+def init(with_scripts, force):
+    """Initialize RuleHawk in current project
 
+    Creates a rulehawk.yaml configuration file if it doesn't exist.
+    Use --force to overwrite an existing configuration.
+    """
+    config_path = Path("rulehawk.yaml")
+
+    # Check if config already exists
     if config_path.exists():
-        click.echo("⚠️  .rulehawk.yaml already exists")
-        return
+        if not force:
+            click.echo("⚠️  rulehawk.yaml already exists!")
+            click.echo("    Use 'rulehawk init --force' to overwrite")
+            click.echo("    Or use 'rulehawk integrate' to just add project scripts")
 
-    default_config = """# RuleHawk Configuration
+            # Even if config exists, we can still generate scripts if requested
+            if with_scripts:
+                click.echo(
+                    "\n📝 Generating integration scripts (without modifying rulehawk.yaml)..."
+                )
+                from .integrator import ProjectIntegrator
+
+                integrator = ProjectIntegrator()
+                integration = integrator.generate_integration()
+                click.echo(f"\n📦 Detected project type: {integration['type']}")
+                click.echo("\n" + integration["instructions"])
+            return
+        else:
+            click.echo("⚠️  Overwriting existing rulehawk.yaml (--force specified)")
+
+    # Create the config file
+    if not config_path.exists() or force:
+        default_config = """# RuleHawk Configuration
 # Lightweight rule enforcement for your codebase
 
 # AI provider for complex checks (claude, openai, cursor, none)
@@ -276,7 +361,7 @@ tools:
 
 # Logging configuration
 logging:
-  dir: .rulehawk
+  dir: rulehawk
   format: jsonl  # or 'markdown'
 
 # Rule-specific configuration
@@ -287,13 +372,89 @@ rules:
     treat_warnings_as_errors: true
 """
 
-    config_path.write_text(default_config)
-    click.echo("✅ Created .rulehawk.yaml")
-    click.echo("🦅 rulehawk is ready to keep watch over your code!")
+        config_path.write_text(default_config)
+        click.echo("✅ Created rulehawk.yaml")
+
+    if with_scripts:
+        from .integrator import ProjectIntegrator
+
+        integrator = ProjectIntegrator()
+        integration = integrator.generate_integration()
+
+        click.echo(f"\n📦 Detected project type: {integration['type']}")
+        click.echo("\n" + integration["instructions"])
+
+    click.echo("\n🦅 rulehawk is ready to keep watch over your code!")
 
 
 @cli.command()
-@click.argument('rule_id')
+@click.option("--write", is_flag=True, help="Actually write the integration files")
+@click.option(
+    "--type",
+    "script_type",
+    type=click.Choice(["auto", "npm", "python", "make", "shell"]),
+    default="auto",
+    help="Type of integration to generate",
+)
+def integrate(write, script_type):
+    """Generate project integration scripts for RuleHawk
+
+    This command helps integrate RuleHawk with your existing project workflow
+    by generating appropriate scripts for npm, python, make, etc.
+
+    Examples:
+        rulehawk integrate         # Show what would be generated
+        rulehawk integrate --write # Actually create/update files
+    """
+    from .integrator import ProjectIntegrator, RuleHawkScriptGenerator
+
+    integrator = ProjectIntegrator()
+
+    # Detect or use specified type
+    if script_type != "auto":
+        integrator.project_type = script_type
+        integrator.runner = script_type
+
+    integration = integrator.generate_integration()
+
+    click.echo("🦅 RuleHawk Integration Generator")
+    click.echo(f"📦 Project type: {integration['type']}")
+    click.echo("-" * 50)
+
+    if not write:
+        click.echo("\n📝 Preview mode (use --write to create files)\n")
+        click.echo(integration["instructions"])
+
+        # Also show git hooks
+        click.echo("\n🔗 Optional Git Hooks:")
+        click.echo("\nCreate .git/hooks/pre-commit:")
+        click.echo("```bash")
+        click.echo(RuleHawkScriptGenerator.generate_git_hooks()["pre-commit"])
+        click.echo("```")
+    else:
+        # Actually write the files
+        files = integrator.write_integration_files(auto_write=True)
+        for file in files:
+            click.echo(f"✅ {file}")
+
+        click.echo("\n✨ Integration files created!")
+        click.echo("Now you can run commands like:")
+
+        if integration["type"] == "npm":
+            click.echo("  npm run preflight")
+            click.echo("  npm run postflight")
+            click.echo("  npm run check")
+        elif integration["type"] in ["python-pyproject", "python-generic", "makefile"]:
+            click.echo("  make preflight")
+            click.echo("  make postflight")
+            click.echo("  make check")
+        else:
+            click.echo("  ./check.sh preflight")
+            click.echo("  ./check.sh postflight")
+
+
+@cli.command()
+@click.argument("rule_id")
 def explain(rule_id):
     """Explain what a specific rule does"""
     registry = RuleRegistry()
@@ -304,41 +465,41 @@ def explain(rule_id):
         return
 
     click.echo(f"\n📋 Rule {rule['id']}: {rule['name']}")
-    click.echo(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    click.echo("━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     click.echo(f"Phase: {rule['phase']}")
     click.echo(f"Severity: {rule['severity']}")
     click.echo(f"Auto-fixable: {'Yes' if rule.get('auto_fixable') else 'No'}")
     click.echo(f"\n{rule['description']}")
 
-    if rule.get('examples'):
+    if rule.get("examples"):
         click.echo("\nExamples:")
-        click.echo(rule['examples'])
+        click.echo(rule["examples"])
 
 
 @cli.command()
-@click.option('--format', type=click.Choice(['text', 'json', 'markdown']), default='text')
-@click.option('--output', type=click.Path(), help='Output file path')
+@click.option("--format", type=click.Choice(["text", "json", "markdown"]), default="text")
+@click.option("--output", type=click.Path(), help="Output file path")
 def report(format, output):
     """Generate a compliance report"""
     config = ConfigLoader.load()
     registry = RuleRegistry()
     runner = RuleRunner(config=config)
 
-    all_rules = registry.get_rules(phase='all')
+    all_rules = registry.get_rules(phase="all")
     results = runner.check_rules(all_rules)
 
     report_data = {
-        'timestamp': datetime.now().isoformat(),
-        'total_rules': len(all_rules),
-        'passed': results['passed_count'],
-        'failed': results['failed_count'],
-        'warnings': results['warning_count'],
-        'rules': results['details']
+        "timestamp": datetime.now().isoformat(),
+        "total_rules": len(all_rules),
+        "passed": results["passed_count"],
+        "failed": results["failed_count"],
+        "warnings": results["warning_count"],
+        "rules": results["details"],
     }
 
-    if format == 'json':
+    if format == "json":
         report_text = json.dumps(report_data, indent=2)
-    elif format == 'markdown':
+    elif format == "markdown":
         report_text = _generate_markdown_report(report_data)
     else:
         report_text = _generate_text_report(report_data)
@@ -355,14 +516,16 @@ def _print_results(results, quiet, verbose):
     if quiet:
         return
 
-    total = results['total_count']
-    passed = results['passed_count']
-    failed = results['failed_count']
-    warnings = results.get('warning_count', 0)
+    total = results["total_count"]
+    passed = results["passed_count"]
+    failed = results["failed_count"]
+    warnings = results.get("warning_count", 0)
 
     # Header with context
     click.echo("\n# rulehawk check results\n")
-    click.echo("The following summary shows the compliance status of your codebase against configured rules:\n")
+    click.echo(
+        "The following summary shows the compliance status of your codebase against configured rules:\n"
+    )
 
     # Summary section with explanation
     click.echo("## Summary\n")
@@ -378,13 +541,15 @@ def _print_results(results, quiet, verbose):
         click.echo("\n## Rule Violations\n")
         if failed > 0:
             click.echo("The following rules have violations that need attention:\n")
-            for rule_result in results['details']:
-                if rule_result['status'] == 'failed':
-                    click.echo(f"### ❌ {rule_result['rule_id']}: {rule_result.get('name', 'Unknown')}\n")
+            for rule_result in results["details"]:
+                if rule_result["status"] == "failed":
+                    click.echo(
+                        f"### ❌ {rule_result['rule_id']}: {rule_result.get('name', 'Unknown')}\n"
+                    )
                     click.echo(f"**Issue**: {rule_result['message']}\n")
-                    if rule_result.get('details'):
+                    if rule_result.get("details"):
                         click.echo("**Details**:")
-                        for detail in rule_result['details']:
+                        for detail in rule_result["details"]:
                             click.echo(f"- {detail}")
                         click.echo()
         else:
@@ -403,25 +568,25 @@ def _generate_markdown_report(data):
     """Generate markdown format report"""
     report = f"""# RuleHawk Compliance Report
 
-Generated: {data['timestamp']}
+Generated: {data["timestamp"]}
 
 ## Summary
-- Total Rules: {data['total_rules']}
-- Passed: {data['passed']} ✅
-- Failed: {data['failed']} ❌
-- Warnings: {data['warnings']} ⚠️
+- Total Rules: {data["total_rules"]}
+- Passed: {data["passed"]} ✅
+- Failed: {data["failed"]} ❌
+- Warnings: {data["warnings"]} ⚠️
 
 ## Rule Details
 """
 
-    for rule in data['rules']:
-        status_icon = {'passed': '✅', 'failed': '❌', 'warning': '⚠️'}.get(rule['status'], '❓')
+    for rule in data["rules"]:
+        status_icon = {"passed": "✅", "failed": "❌", "warning": "⚠️"}.get(rule["status"], "❓")
         report += f"\n### {rule['rule_id']}: {rule['name']} {status_icon}\n"
         report += f"- Status: {rule['status']}\n"
         report += f"- Message: {rule['message']}\n"
-        if rule.get('details'):
+        if rule.get("details"):
             report += "- Details:\n"
-            for detail in rule['details']:
+            for detail in rule["details"]:
                 report += f"  - {detail}\n"
 
     return report
@@ -444,13 +609,13 @@ def _generate_text_report(data):
         "-" * 50,
     ]
 
-    for rule in data['rules']:
+    for rule in data["rules"]:
         lines.append(f"{rule['rule_id']}: {rule['name']} - {rule['status'].upper()}")
-        if rule.get('message'):
+        if rule.get("message"):
             lines.append(f"  {rule['message']}")
 
     return "\n".join(lines)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

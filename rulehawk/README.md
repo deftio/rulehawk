@@ -406,7 +406,7 @@ Additional documentation and resources:
 - **[Introduction to Rules](docs/introduction.md)** - Why rules matter and how they work
 - **[Architecture Guide](docs/architecture.md)** - Technical design and internals
 - **[Custom Rules Guide](docs/custom-rules.md)** - Creating project-specific rules
-- **[Codebase Rules](../codebase-rules.md)** - Full rule documentation
+- **[Codebase Rules](../docs/codebase-rules.md)** - Full rule documentation
 
 ## Support
 

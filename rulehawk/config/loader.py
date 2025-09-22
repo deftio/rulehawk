@@ -2,10 +2,12 @@
 Configuration Loader for RuleHawk
 """
 
-import yaml
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import yaml
+
 from .yaml_loader import YamlRuleLoader
 
 
@@ -13,44 +15,44 @@ class ConfigLoader:
     """Load and manage RuleHawk configuration"""
 
     DEFAULT_CONFIG = {
-        'ai_provider': 'none',
-        'enabled_phases': ['preflight', 'postflight', 'security'],
-        'enabled_rules': 'all',
-        'ignore_paths': [
-            'node_modules/',
-            '.venv/',
-            'venv/',
-            'vendor/',
-            'dist/',
-            'build/',
-            '__pycache__/',
-            '.git/',
+        "ai_provider": "none",
+        "enabled_phases": ["preflight", "postflight", "security"],
+        "enabled_rules": "all",
+        "ignore_paths": [
+            "node_modules/",
+            ".venv/",
+            "venv/",
+            "vendor/",
+            "dist/",
+            "build/",
+            "__pycache__/",
+            ".git/",
         ],
-        'tools': {
-            'python': {
-                'formatter': 'ruff',
-                'linter': 'ruff',
-                'security': 'bandit',
-                'test': 'pytest',
+        "tools": {
+            "python": {
+                "formatter": "ruff",
+                "linter": "ruff",
+                "security": "bandit",
+                "test": "pytest",
             },
-            'javascript': {
-                'formatter': 'prettier',
-                'linter': 'eslint',
-                'security': 'eslint-plugin-security',
-                'test': 'jest',
+            "javascript": {
+                "formatter": "prettier",
+                "linter": "eslint",
+                "security": "eslint-plugin-security",
+                "test": "jest",
             },
-            'typescript': {
-                'formatter': 'prettier',
-                'linter': 'eslint',
-                'security': 'eslint-plugin-security',
-                'test': 'jest',
+            "typescript": {
+                "formatter": "prettier",
+                "linter": "eslint",
+                "security": "eslint-plugin-security",
+                "test": "jest",
             },
         },
-        'logging': {
-            'dir': '.rulehawk',
-            'format': 'jsonl',
+        "logging": {
+            "dir": "rulehawk",
+            "format": "jsonl",
         },
-        'rules': {}
+        "rules": {},
     }
 
     @classmethod
@@ -62,11 +64,11 @@ class ConfigLoader:
         if config_path is None:
             # Search for config in order of preference
             possible_paths = [
-                Path('rulehawk.yaml'),  # Primary config file
-                Path('.rulehawk.yaml'),
-                Path('.rulehawk.yml'),
-                Path('.rulehawk.json'),
-                Path('rulehawk.config.json'),
+                Path("rulehawk.yaml"),  # Primary config file
+                Path(".rulehawk.yaml"),
+                Path(".rulehawk.yml"),
+                Path(".rulehawk.json"),
+                Path("rulehawk.config.json"),
             ]
             for path in possible_paths:
                 if path.exists():
@@ -75,13 +77,13 @@ class ConfigLoader:
 
         if config_path and config_path.exists():
             # If it's a YAML file with rules, use YamlRuleLoader
-            if config_path.suffix in ['.yaml', '.yml'] and config_path.name.startswith('rulehawk'):
+            if config_path.suffix in [".yaml", ".yml"] and config_path.name.startswith("rulehawk"):
                 try:
                     yaml_loader = YamlRuleLoader(str(config_path))
                     loaded_config = yaml_loader.load()
                     config = cls._merge_configs(config, loaded_config)
                     # Store the loader for rule access
-                    config['_yaml_loader'] = yaml_loader
+                    config["_yaml_loader"] = yaml_loader
                 except Exception as e:
                     print(f"Warning: Could not load rules from {config_path}: {e}")
                     # Fall back to simple loading
@@ -103,9 +105,9 @@ class ConfigLoader:
         """Load configuration from file"""
         try:
             content = path.read_text()
-            if path.suffix in ['.yaml', '.yml']:
+            if path.suffix in [".yaml", ".yml"]:
                 return yaml.safe_load(content)
-            elif path.suffix == '.json':
+            elif path.suffix == ".json":
                 return json.loads(content)
         except Exception as e:
             print(f"Warning: Could not load config from {path}: {e}")
@@ -131,9 +133,9 @@ class ConfigLoader:
 
         # Map of env vars to config paths
         env_mappings = {
-            'RULEHAWK_AI_PROVIDER': 'ai_provider',
-            'RULEHAWK_LOG_DIR': ('logging', 'dir'),
-            'RULEHAWK_LOG_FORMAT': ('logging', 'format'),
+            "RULEHAWK_AI_PROVIDER": "ai_provider",
+            "RULEHAWK_LOG_DIR": ("logging", "dir"),
+            "RULEHAWK_LOG_FORMAT": ("logging", "format"),
         }
 
         for env_var, config_path in env_mappings.items():
@@ -154,22 +156,22 @@ class ConfigLoader:
     @classmethod
     def validate(cls, config: Dict[str, Any]) -> bool:
         """Validate configuration"""
-        required_keys = ['ai_provider', 'enabled_phases', 'enabled_rules']
+        required_keys = ["ai_provider", "enabled_phases", "enabled_rules"]
 
         for key in required_keys:
             if key not in config:
                 return False
 
         # Validate ai_provider
-        valid_providers = ['none', 'claude', 'openai', 'cursor', 'local']
-        if config['ai_provider'] not in valid_providers:
+        valid_providers = ["none", "claude", "openai", "cursor", "local"]
+        if config["ai_provider"] not in valid_providers:
             return False
 
         # Validate phases
-        valid_phases = ['preflight', 'inflight', 'postflight', 'security', 'always']
-        if isinstance(config['enabled_phases'], list):
-            for phase in config['enabled_phases']:
-                if phase not in valid_phases and phase != 'all':
+        valid_phases = ["preflight", "inflight", "postflight", "security", "always"]
+        if isinstance(config["enabled_phases"], list):
+            for phase in config["enabled_phases"]:
+                if phase not in valid_phases and phase != "all":
                     return False
 
         return True

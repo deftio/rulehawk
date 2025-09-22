@@ -3,6 +3,20 @@
 # It's designed to be readable by both humans and agents
 
 # ============================================================================
+# AGENT INTEGRATION INSTRUCTIONS
+# ============================================================================
+# When an agent works with a project using RuleHawk:
+# 1. Run: rulehawk init (creates rulehawk.yaml, safe - won't overwrite)
+# 2. Run: rulehawk integrate (shows integration options)
+# 3. Use the generated standard commands:
+#    - npm run preflight / make preflight (before starting work)
+#    - npm run postflight / make postflight (before committing)
+#    - npm run check / make check (run all checks)
+#
+# The integration will automatically detect project type (npm, python, make)
+# and create appropriate scripts that call RuleHawk.
+
+# ============================================================================
 # CONFIGURATION
 # ============================================================================
 
@@ -29,7 +43,7 @@ config:
 
   # Logging configuration
   logging:
-    dir: .rulehawk       # Where to store audit logs
+    dir: rulehawk_data   # Where to store audit logs
     format: jsonl        # Log format (jsonl|markdown)
 
 # ============================================================================
@@ -440,10 +454,10 @@ custom_rules:
 
 agent_recovery:
   enabled: true
-  state_file: .rulehawk/agent-state.json
+  state_file: rulehawk/agent-state.json
   instructions: |
     If agent crashes during development:
-    1. Check .rulehawk/agent-state.json for last known state
+    1. Check rulehawk/agent-state.json for last known state
     2. Review git status and recent commits
     3. Check TASK-PLAN.md if it exists
     4. Run 'rulehawk check' to see current violations
